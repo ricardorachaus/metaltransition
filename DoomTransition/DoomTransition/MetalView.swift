@@ -4,6 +4,7 @@
 //
 //  Created by Ricardo Rachaus on 16/11/22.
 //
+
 import MetalKit
 
 final class MetalView: MTKView {
