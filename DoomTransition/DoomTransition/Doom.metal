@@ -32,14 +32,14 @@ fragment float4 doom_melt(texture2d<float> from [[ texture(0) ]],
                           texture2d<float> to [[ texture(1) ]],
                           sampler sampler [[ sampler(0) ]],
                           VertexOut vertexIn [[ stage_in ]],
-                          constant float &deltaTime [[ buffer(0) ]]) {
+                          constant float &timePassed [[ buffer(0) ]]) {
     float2 uv = vertexIn.textureCoordinate;
-    float velocity = START_SPEED * deltaTime;
+    float velocity = START_SPEED * timePassed;
     if (velocity > 1) velocity = 1;
 
     uv.y -= velocity * 0.35 * fract(sin(dot(float2(uv.x, 0), float2(12.9898, 78.233))) * 43758.5453);
 
-    if (velocity == 1) uv.y -= MELT_SPEED * (deltaTime - velocity / START_SPEED);
+    if (velocity == 1) uv.y -= MELT_SPEED * (timePassed - velocity / START_SPEED);
 
     if (uv.y < 0) {
         return to.sample(sampler, vertexIn.textureCoordinate);

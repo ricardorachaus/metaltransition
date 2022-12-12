@@ -29,14 +29,13 @@ final class MetalView: MTKView {
         SIMD2<Float>(1, 1), // Bottom Right
     ]
 
-    var vertexBuffer: MTLBuffer!
     var renderPipelineState: MTLRenderPipelineState!
     var commandQueue: MTLCommandQueue!
     var sampler: MTLSamplerState!
 
     var fromTexture: MTLTexture?
     var toTexture: MTLTexture?
-    var deltaTime: Float = 0
+    var timePassed: Float = 0
 
     override init(frame: CGRect = .zero, device: MTLDevice?) {
         super.init(frame: frame, device: device)
@@ -48,14 +47,9 @@ final class MetalView: MTKView {
     }
 
     func setup() {
-        vertexBuffer = device!.makeBuffer(
-            bytes: positions,
-            length: MemoryLayout<SIMD3<Float>>.stride * positions.count
-        )
         commandQueue = device!.makeCommandQueue()
-
-        createRenderPipelineState()
         sampler = device!.makeSamplerState(descriptor: MTLSamplerDescriptor())
+        createRenderPipelineState()
     }
 
     func createRenderPipelineState() {
@@ -72,8 +66,7 @@ final class MetalView: MTKView {
         vertexDescriptor.attributes[1].bufferIndex = 0
         vertexDescriptor.attributes[1].offset = MemoryLayout<SIMD3<Float>>.size
 
-        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD3<Float>>.stride
-        + MemoryLayout<SIMD2<Float>>.stride
+        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD3<Float>>.stride + MemoryLayout<SIMD2<Float>>.stride
 
         let renderPipelineDescriptor = MTLRenderPipelineDescriptor()
         renderPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
@@ -90,13 +83,17 @@ final class MetalView: MTKView {
             let renderPassDescriptor = currentRenderPassDescriptor
         else { return }
 
-        deltaTime += 1 / Float(preferredFramesPerSecond)
+        timePassed += 1 / Float(preferredFramesPerSecond)
 
         let commandBuffer = commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer?.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
 
         commandEncoder?.setRenderPipelineState(renderPipelineState)
-        commandEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        commandEncoder?.setVertexBytes(
+            positions,
+            length: MemoryLayout<SIMD3<Float>>.stride * positions.count,
+            index: 0
+        )
 
         commandEncoder?.setVertexBytes(
             textureCoordinates,
@@ -109,7 +106,7 @@ final class MetalView: MTKView {
             commandEncoder?.setFragmentTexture(toTexture, index: 1)
             commandEncoder?.setFragmentSamplerState(sampler, index: 0)
             commandEncoder?.setFragmentBytes(
-                &deltaTime,
+                &timePassed,
                 length: MemoryLayout<Float>.stride,
                 index: 0
             )
